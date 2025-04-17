@@ -90,7 +90,7 @@ tiktoken==0.7.0
 tokenizers==0.13.3
 torch==2.4.1
 tqdm==4.67.1
-transformers==4.48.3
+transformers==4.46.3
 typing_extensions==4.12.2
 tzdata==2022.6
 urllib3==2.3.0
