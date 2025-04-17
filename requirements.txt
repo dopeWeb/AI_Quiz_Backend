@@ -52,7 +52,7 @@ nltk==3.9.1
 numpy==1.24.4
 openai==1.59.7
 packaging==24.2
-pillow==11.1.0
+pillow==10.4.0
 proto-plus==1.26.1
 protobuf==5.29.3
 psycopg2==2.9.10
