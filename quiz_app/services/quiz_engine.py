@@ -1,10 +1,8 @@
-# quiz_app/services/quiz_engine.py
-
 import os
 from typing import List
 from django.conf import settings
 from langchain_openai import ChatOpenAI
-from langchain.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from .quiz_templates import (
     create_multiple_choice_template,
     create_true_false_template,
@@ -58,9 +56,12 @@ def generate_quiz(
 
     # 3. Initialize LLM with your local or remote GPT model
     llm = ChatOpenAI(
-        model="gpt-4o-mini",  # or your desired model name
-        temperature=0.0       # zero for more deterministic results
-    )
+        model="gpt-4o-mini",  
+        temperature=0.8,            
+        top_p=0.9,                 
+        frequency_penalty=0.7,      
+        presence_penalty=0.8,       
+)
 
     # 4. Select prompt template and Pydantic schema
     if quiz_type == "multiple-choice":

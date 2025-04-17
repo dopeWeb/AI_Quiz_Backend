@@ -1,97 +1,80 @@
-# quiz_app/services/quiz_templates.py
-
 from langchain_core.prompts import ChatPromptTemplate
 
 def create_multiple_choice_template(language: str = "English"):
-    """
-    Creates a multiple-choice prompt template that instructs GPT to write
-    the quiz in the specified language, but without inserting 'a)' or 'b)'
-    into the text of each choice. The correct answer should still be one of
-    the letters: 'a', 'b', 'c', or 'd' in lowercase.
-    """
     prompt = ChatPromptTemplate.from_messages([
-        (
-            'system',
-            f"""You are a quiz engine that generates multiple-choice questions.
-               The user will ask for a certain number of questions about a context.
-               You must:
-
-               1. Provide exactly {{num_questions}} questions in {language}.
-               2. Each question must have four answer choices, but do not label them with letters or prefixes in the text. (Just list the text for each choice.)
-               3. Return the correct answer separately as one of the letters: 'a', 'b', 'c', or 'd', in lowercase.
-               4. All question text and choices must be in {language}.
-               5. Do not include extra text or disclaimers.
-            """
-        ),
-        (
-            'human',
-            f"""
-            Please create a multiple-choice quiz with {{num_questions}} questions 
-            about {{quiz_context}}, all in {language}.
-
-            - Do NOT prepend letters like 'a)' or 'b)' to each choice's text.
-            - Only indicate the correct answer as 'a', 'b', 'c', or 'd' in your final output.
-            """
-        )
+    (
+        "system",
+        # {language} is inlined; {num_questions}/{quiz_context} remain template vars
+        f"Your task is to generate a multiple-choice quiz in {language}. "
+        "For each question, provide exactly four answer choices without any letter labels in the text. "
+        "Then, return the correct answer as one of the letters: A, B, C, or D (in uppercase). "
+        "All content (questions and choices) must be written in {{language}}. "              # note the double braces
+        "If a non‑empty context ({quiz_context}) is provided, each question must probe a different facet "
+        "(e.g., definitions, advantages, limitations, applications) so no two overlap. "
+        "If the context is empty, select {num_questions} entirely distinct domains "
+        "(e.g., history, science, arts, geography, technology), and phrase each question and its choices "
+        "in a brand‑new way—never recycle wording across runs unless absolutely no new option remains."
+    ),
+    (
+        "human",
+        # {num_questions}/{quiz_context} are still template vars; {language} is inlined
+        f"Please create a quiz with {{num_questions}} questions based on the following context: {{quiz_context}}. "
+        "Ensure every question has exactly four answer choices and specify the correct answer as a single uppercase letter (A, B, C, or D). "
+        "Use fresh, varied phrasing for both questions and choices—do not repeat wording from any previous quiz generation. "
+        "All output should be in {{language}}."                                           # and here too
+    ),
     ])
+    
     return prompt
 
 
 
 def create_true_false_template(language: str = "English"):
-    """
-    Creates a true-false prompt template that instructs GPT to:
-      - Write all question text in 'language'.
-      - Use strictly 'True' or 'False' (in English) for the answers.
-    """
     prompt = ChatPromptTemplate.from_messages([
-        (
-            'system',
-            f"""You are a quiz engine that generates true-false questions according
-               to user input specifications:
-               1. Provide exactly {{num_questions}} questions in {language}.
-               2. For each question, the correct answer must be strictly 'True' or 'False' in English.
-               3. No extra commentary or disclaimers.
-            """
+          (
+            "system",
+            # {language} is inlined; {num_questions} & {quiz_context} remain template vars
+            f"You are a quiz engine generating true–false statements and answers in {language}. "
+            "Produce exactly {num_questions} distinct question–answer pairs. "
+            "If a non‑empty context ({quiz_context}) is given, each statement must address a different aspect "
+            "(e.g. definitions, advantages, limitations, applications, examples, historical facts) so that no two "
+            "overlap in content. If the context is empty, choose {num_questions} entirely separate topics "
+            "(science, history, arts, technology, geography, etc.). "
+            "Always vary your wording and structure—never repeat phrasing across runs unless you’ve truly exhausted "
+            "all unique possibilities."
         ),
         (
-            'human',
-            f"""Create EXACTLY {{num_questions}} true-false question(s) in {language} 
-            about the following context:
-            {{quiz_context}}
-
-            IMPORTANT:
-            - All question text must be in {language}.
-            - Each correct answer must be either 'True' or 'False' (in English).
-            """
-        )
+            "human",
+            # single f‑string so {num_questions} & {quiz_context} are still template vars
+            f"Create a quiz with {{num_questions}} true–false statements about: {{quiz_context}}. "
+            f"Write exactly {{num_questions}} statements and their correct answers ('True' or 'False') in {language}, "
+            "using fresh wording and no extra commentary or explanations."
+        ),
     ])
     return prompt
 
 
-
 def create_open_ended_template(language: str = "English"):
-    """
-    Creates an open-ended prompt template that instructs GPT to write
-    the quiz in the specified language.
-    """
     prompt = ChatPromptTemplate.from_messages([
         (
-            'system',
-            f"""You are a quiz engine that generates open-ended questions with answers
-               according to user input specifications.
-               1. Provide exactly {{num_questions}} open-ended questions in {language}.
-               2. Provide an answer for each question in {language}.
-               3. No additional commentary or disclaimers.
-            """
+            "system",
+            # {language} is injected; {num_questions}/{quiz_context} stay as template vars
+            f"You are a quiz engine generating open‑ended questions and answers in {language}. "
+            "Produce exactly {num_questions} question‑answer pairs. "
+            "If a non‑empty context ({quiz_context}) is supplied, each question must explore a distinct facet "
+            "(e.g. definition, benefits, drawbacks, use‑cases, examples, future directions) so that no two "
+            "questions overlap. If the context is empty, select entirely different domains "
+            "(history, science, arts, philosophy, geography, etc.) AND different question types "
+            "(explanation, comparison, analysis, evaluation), using fresh wording each time. "
+            "Only repeat a topic or phrasing if absolutely no new question remains. "
+            "Even when asked multiple times on the same context, always vary the angle and wording so you never"
+            " produce the identical question twice."
         ),
         (
-            'human',
-            f"""Create a quiz with {{num_questions}} open-ended questions about the following context:
-            {{quiz_context}}
-
-            Write both the questions and answers in {language}.
-            """
-        )
+            "human",
+            # runtime will fill in both num_questions and quiz_context (which may be "")
+            "Create a quiz with {num_questions} open‑ended questions about: {quiz_context}. "
+            f"Write each question and its answer in {language}, with no extra commentary or disclaimers."
+        ),
     ])
     return prompt

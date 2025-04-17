@@ -1,0 +1,6 @@
+# or be explicit:
+myapp.log
+frontend.log
+
+# ignore your env file
+.env
