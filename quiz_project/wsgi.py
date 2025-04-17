@@ -14,7 +14,7 @@ from django.core.wsgi import get_wsgi_application
 sys.path.append(r"D:\JohnBryce\ProjecBackend_Finall")
 
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "quiz_project.quiz_project.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "quiz_project.settings")
 
 
 application = get_wsgi_application()
