@@ -70,7 +70,7 @@ python-dotenv==1.0.1
 python-Levenshtein==0.21.0
 pytz==2024.2
 PyYAML==6.0.2
-RapidFuzz==3.11.0
+RapidFuzz==3.9.7
 regex==2024.11.6
 requests==2.32.3
 requests-toolbelt==1.0.0
