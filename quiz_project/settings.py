@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 from decouple import config
 from dotenv import load_dotenv
+from django.core.wsgi import get_wsgi_application
 
 
 
@@ -76,6 +77,11 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'quiz_project.wsgi.application'
+
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "quiz_project.settings")  # ✅
+
+application = get_wsgi_application()
 
 
 # Database
