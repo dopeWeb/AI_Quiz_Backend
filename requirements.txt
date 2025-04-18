@@ -49,7 +49,7 @@ multidict==6.1.0
 murmurhash==1.0.12
 mysqlclient==2.2.7
 nltk==3.9.1
-numpy==1.24.4
+numpy==1.25.1
 openai==1.59.7
 packaging==24.2
 pillow==10.4.0
