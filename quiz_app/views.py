@@ -266,85 +266,66 @@ class SaveQuizView(APIView):
 # Configure language support
 DEFAULT_LANGUAGE = "english"
 SUPPORTED_LANGUAGES = ["english", "spanish", "russian", "german", "french", "chinese"]
-
-# Create a dictionary of stemmers for supported languages (except Chinese).
 STEMMER_DICT = {lang: SnowballStemmer(lang) for lang in SUPPORTED_LANGUAGES if lang != "chinese"}
-
-# Initialize Russian morphological analyzer
 morph_analyzer = pymorphy2.MorphAnalyzer()
 
-# Initialize the semantic similarity model (multilingual) with a stronger model.
-semantic_model = SentenceTransformer('paraphrase-xlm-r-multilingual-v1')
-   
+
+_semantic_model: SentenceTransformer | None = None
+
+def get_semantic_model() -> SentenceTransformer:
+    global _semantic_model
+    if _semantic_model is None:
+        logger.debug("Loading SentenceTransformer model for the first time…")
+        _semantic_model = SentenceTransformer("paraphrase-xlm-r-multilingual-v1")
+        logger.debug("SentenceTransformer model loaded.")
+    return _semantic_model
+
+
 
 def normalize_text(text: str, language: str = DEFAULT_LANGUAGE) -> str:
-
-    normalized = unicodedata.normalize("NFKC", text)
-    normalized = normalized.lower().strip()
-    # Auto-detect Chinese by checking for any character in the common Chinese range.
-    if language.lower() == "chinese" or re.search(r'[\u4e00-\u9fff]', normalized):
+    normalized = unicodedata.normalize("NFKC", text).lower().strip()
+    if language.lower() == "chinese" or re.search(r"[\u4e00-\u9fff]", normalized):
         import jieba
-        tokens = list(jieba.cut(normalized, cut_all=False))
-        normalized = " ".join(tokens)
-    else:
-        # Allow letters, digits, whitespace, hyphens, apostrophes, and "=".
-        normalized = re.sub(r"[^\w\s\-'=]", "", normalized, flags=re.UNICODE)
-    return normalized
-
+        tokens = jieba.cut(normalized, cut_all=False)
+        return " ".join(tokens)
+    return re.sub(r"[^\w\s\-'=]", "", normalized, flags=re.UNICODE)
 
 def stem_word_multi(word: str, language: str = DEFAULT_LANGUAGE) -> str:
- 
     lang = language.lower()
     if lang == "russian":
-        lemma = morph_analyzer.parse(word)[0].normal_form
-        return lemma
-    elif lang in STEMMER_DICT:
-        stemmed = STEMMER_DICT[lang].stem(word)
-        return stemmed
+        return morph_analyzer.parse(word)[0].normal_form
+    if lang in STEMMER_DICT:
+        return STEMMER_DICT[lang].stem(word)
     return word
 
-
 def tokenize_text(text: str, language: str) -> List[str]:
-
-    # If text contains Chinese, use jieba regardless of language parameter.
-    if language.lower() == "chinese" or re.search(r'[\u4e00-\u9fff]', text):
+    if language.lower() == "chinese" or re.search(r"[\u4e00-\u9fff]", text):
         import jieba
-        tokens = list(jieba.cut(text, cut_all=False))
-        return tokens
-    tokens = text.split()
-    return tokens
+        return list(jieba.cut(text, cut_all=False))
+    return text.split()
+
 
 
 def token_match_ratio(concept_tokens: List[str], answer_tokens: List[str], token_threshold: int = 90) -> float:
-
     if not concept_tokens:
         return 0.0
-    matched_count = 0
-    for token in concept_tokens:
-        for a_token in answer_tokens:
-            ratio = fuzz.ratio(token, a_token)
-            if ratio >= token_threshold:
-                matched_count += 1
-                break
-    ratio_final = matched_count / len(concept_tokens)
-    return ratio_final
-
+    matched = 0
+    for ct in concept_tokens:
+        if any(fuzz.ratio(ct, at) >= token_threshold for at in answer_tokens):
+            matched += 1
+    return matched / len(concept_tokens)
 
 def check_relevance(student_answer: str, correct_answer: str, language: str = DEFAULT_LANGUAGE) -> bool:
- 
-    student_norm = normalize_text(student_answer, language)
-    correct_norm = normalize_text(correct_answer, language)
-    relevance_score = fuzz.token_set_ratio(student_norm, correct_norm)
-    return relevance_score >= 50
-
+    s = normalize_text(student_answer, language)
+    c = normalize_text(correct_answer, language)
+    return fuzz.token_set_ratio(s, c) >= 50
 
 def semantic_similarity(text1: str, text2: str) -> float:
- 
-    embedding1 = semantic_model.encode(text1, convert_to_tensor=True)
-    embedding2 = semantic_model.encode(text2, convert_to_tensor=True)
-    cosine_sim = util.cos_sim(embedding1, embedding2).item()  # value between 0 and 1
-    return cosine_sim * 100
-
+    model = get_semantic_model()
+    emb1 = model.encode(text1, convert_to_tensor=True)
+    emb2 = model.encode(text2, convert_to_tensor=True)
+    score = util.cos_sim(emb1, emb2).item()  # 0–1
+    return score * 100
 
 def check_semantic_similarity_percentage(
     student_answer: str,
@@ -352,76 +333,50 @@ def check_semantic_similarity_percentage(
     language: str = DEFAULT_LANGUAGE,
     question_text: str = ""
 ) -> Dict[str, Any]:
-    # Normalize texts using language-specific processing.
-    student_norm = normalize_text(student_answer, language)
-    correct_norm = normalize_text(correct_answer, language)
-    
-    # Check if student just copied the question.
+    s_norm = normalize_text(student_answer, language)
+    c_norm = normalize_text(correct_answer, language)
+
+    # guard against copying the question verbatim
     if question_text:
-        question_norm = normalize_text(question_text, language)
-        if student_norm == question_norm:
-            return {
-                "text_similarity_percentage": 0.0,
+        q_norm = normalize_text(question_text, language)
+        if s_norm == q_norm:
+            return {"text_similarity_percentage": 0.0,
+                    "semantic_similarity_percentage": 0.0,
+                    "overall_score": 0.0,
+                    "result": "incorrect"}
+
+    # exact match short‑circuit
+    if s_norm == c_norm:
+        return {"text_similarity_percentage": 100.0,
+                "semantic_similarity_percentage": 100.0,
+                "overall_score": 100.0,
+                "result": "correct"}
+
+    # degenerate‑answer guard
+    tokens = tokenize_text(s_norm, language)
+    min_tokens = 5 if (language.lower() == "chinese" or re.search(r"[\u4e00-\u9fff]", s_norm)) else 3
+    if len(tokens) < min_tokens:
+        return {"text_similarity_percentage": 0.0,
                 "semantic_similarity_percentage": 0.0,
                 "overall_score": 0.0,
-                "result": "incorrect",
-            }
-    
-    # Exact match check.
-    if student_norm == correct_norm:
-        return {
-            "text_similarity_percentage": 100.0,
-            "semantic_similarity_percentage": 100.0,
-            "overall_score": 100.0,
-            "result": "correct",
-        }
-    
-    # Use tokenize_text to get tokens.
-    tokens = tokenize_text(student_norm, language)
-    # For Chinese, require at least 5 tokens; for others, at least 3 tokens.
-    if (language.lower() == "chinese" or re.search(r'[\u4e00-\u9fff]', student_norm)) and len(tokens) < 5:
-        return {
-            "text_similarity_percentage": 0.0,
-            "semantic_similarity_percentage": 0.0,
-            "overall_score": 0.0,
-            "result": "incorrect",
-        }
-    elif not (language.lower() == "chinese" or re.search(r'[\u4e00-\u9fff]', student_norm)) and len(tokens) < 3:
-        return {
-            "text_similarity_percentage": 0.0,
-            "semantic_similarity_percentage": 0.0,
-            "overall_score": 0.0,
-            "result": "incorrect",
-        }
-    
-    if not check_relevance(student_answer, correct_answer, language):
-        logger.debug("DEBUG: Warning: Student answer is not very relevant to the correct answer.")
-    
-    # Compute fuzzy match score using token_set_ratio for better tolerance of extra content.
-    global_fuzzy = fuzz.token_set_ratio(student_norm, correct_norm)
-    global_fuzzy = min(global_fuzzy, 100)  # Cap at 100
-    
-    # Compute global semantic similarity.
-    global_semantic = semantic_similarity(student_norm, correct_norm)
-    global_semantic = min(global_semantic, 100)  # Cap at 100
-    
-    # Combine the fuzzy and semantic scores using a weighted average (30% fuzzy, 70% semantic).
-    combined_score = (0.3 * global_fuzzy) + (0.7 * global_semantic)
-    combined_score = min(combined_score, 100)  # Cap at 100
-    
-    # Adjust thresholds for determining the result.
-    if combined_score >= 40:
+                "result": "incorrect"}
+
+    # fuzzy + semantic
+    fuzzy_score = min(fuzz.token_set_ratio(s_norm, c_norm), 100)
+    sem_score   = min(semantic_similarity(s_norm, c_norm), 100)
+    combined   = min(0.3 * fuzzy_score + 0.7 * sem_score, 100)
+
+    if combined >= 40:
         result = "correct"
-    elif combined_score >= 20:
+    elif combined >= 20:
         result = "partially correct"
     else:
         result = "incorrect"
-    
-    
+
     return {
-        "text_similarity_percentage": round(global_fuzzy, 2),
-        "semantic_similarity_percentage": round(global_semantic, 2),
-        "overall_score": round(combined_score, 2),
+        "text_similarity_percentage": round(fuzzy_score, 2),
+        "semantic_similarity_percentage": round(sem_score, 2),
+        "overall_score": round(combined, 2),
         "result": result,
     }
 
