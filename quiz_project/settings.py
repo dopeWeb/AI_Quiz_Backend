@@ -54,7 +54,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-CORS_ALLOW_ALL_ORIGINS = True
 
 
 ROOT_URLCONF = 'quiz_project.urls'
@@ -135,9 +134,8 @@ CSRF_TRUSTED_ORIGINS = ['http://localhost:3000', "https://ai-quiz-backend.onrend
 
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "https://ai-quiz-backend.onrender.com",
-
+  "http://localhost:3000",               # React dev server
+  "https://ai-quiz-backend.onrender.com" # your production URL
 ]
 
 SESSION_COOKIE_AGE = 1209600  # 2 weeks
