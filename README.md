@@ -47,6 +47,7 @@ source .venv/bin/activate       # macOS/Linux
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
+## create .env
 
 # Django
 SECRET_KEY=your-django-secret-key
