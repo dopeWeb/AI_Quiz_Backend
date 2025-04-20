@@ -27,7 +27,6 @@ torch==2.4.1
 
 # Transformers stack
 transformers>=4.40.2,<4.47
-tokenizers>=0.20,<0.21
 sentence-transformers==3.2.1
 
 # Multilingual NLP
