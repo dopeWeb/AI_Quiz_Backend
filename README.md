@@ -54,11 +54,11 @@ SECRET_KEY=your-django-secret-key
 DEBUG=True
 
 ## Database (PostgreSQL)
-POSTGRES_DB=quiz_db
-POSTGRES_USER=quiz_user
-POSTGRES_PASSWORD=supersecret
-POSTGRES_HOST=127.0.0.1
-POSTGRES_PORT=5432
+POSTGRES_DB=your db
+POSTGRES_USER=your user
+POSTGRES_PASSWORD=your password
+POSTGRES_HOST=your host
+POSTGRES_PORT=your port
 
 ## OpenAI
 OPENAI_API_KEY=sk-...
