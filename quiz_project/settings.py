@@ -54,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+CORS_ALLOW_ALL_ORIGINS = True
 
 
 ROOT_URLCONF = 'quiz_project.urls'
@@ -117,6 +118,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
@@ -130,12 +134,11 @@ OPENAI_API_KEY = config("OPENAI_API_KEY", default="")
 CORS_ALLOW_CREDENTIALS = True
 
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:3000', "https://ai-quiz-backend.onrender.com",]
+CSRF_TRUSTED_ORIGINS = ['http://localhost:3000']
 
 
 CORS_ALLOWED_ORIGINS = [
-  "http://localhost:3000",               # React dev server
-  "https://ai-quiz-backend.onrender.com" # your production URL
+    "http://localhost:3000",
 ]
 
 SESSION_COOKIE_AGE = 1209600  # 2 weeks
@@ -237,4 +240,5 @@ AXES_DISABLE_SUPERUSER_LOCKOUT = False
 # Optional: Log axis events at the DEBUG level.
 import logging
 logging.getLogger('axes.watch_login').setLevel(logging.DEBUG)
+
 
