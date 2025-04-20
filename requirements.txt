@@ -30,8 +30,6 @@ transformers>=4.40.2,<4.47
 sentence-transformers==3.2.1
 
 # Multilingual NLP
-spacy==3.8.0
-es_core_news_sm @ https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.8.0/es_core_news_sm-3.8.0-py3-none-any.whl
 pymorphy2==0.9.1
 pymorphy2-dicts-ru==2.4.417127.4579844
 jieba==0.42.1
