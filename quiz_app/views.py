@@ -1,6 +1,6 @@
 from datetime import date
 from django.utils import timezone
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from django.shortcuts import get_object_or_404
 from django.views import View
 from rest_framework.views import APIView
@@ -12,6 +12,15 @@ from rapidfuzz import fuzz
 import unicodedata
 import re
 from nltk.stem import SnowballStemmer
+import inspect
+
+if not hasattr(inspect, "getargspec"):
+    def getargspec(func):
+        full = inspect.getfullargspec(func)
+        # return only (args, varargs, varkw, defaults)
+        return full.args, full.varargs, full.varkw, full.defaults
+    inspect.getargspec = getargspec
+    
 import pymorphy2  
 from sentence_transformers import SentenceTransformer, util
 from django.contrib.auth import authenticate, login, logout
@@ -36,6 +45,8 @@ from .auth_utils import format_duration, get_lockout_info, update_lockout_info, 
 logger = logging.getLogger("myapp")
 frontend_logger = logging.getLogger("frontend")
 uidb64 = urlsafe_base64_encode(force_bytes(User.pk))
+
+
 
 
 class GenerateQuizView(APIView):
@@ -270,7 +281,7 @@ STEMMER_DICT = {lang: SnowballStemmer(lang) for lang in SUPPORTED_LANGUAGES if l
 morph_analyzer = pymorphy2.MorphAnalyzer()
 
 
-_semantic_model: SentenceTransformer | None = None
+_semantic_model: Optional[SentenceTransformer] = None
 
 def get_semantic_model() -> SentenceTransformer:
     global _semantic_model
@@ -1061,6 +1072,7 @@ class CheckAuthView(APIView):
             return Response({'authenticated': False})
         
 
+
 class ForgotPasswordView(APIView):
     def post(self, request):
         try:
@@ -1120,6 +1132,9 @@ class ForgotPasswordView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+
+
+
 class ForgotPasswordConfirmView(APIView):
     def post(self, request):
         uidb64 = request.data.get('uidb64')
@@ -1142,6 +1157,7 @@ class ForgotPasswordConfirmView(APIView):
         else:
             return Response({'error': 'Invalid token.'}, status=status.HTTP_400_BAD_REQUEST)
         
+
 
 
 class BrowserLogView(APIView):
