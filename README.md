@@ -47,33 +47,33 @@ source .venv/bin/activate       # macOS/Linux
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
-## create .env
+# create .env
 
-# Django
+## Django
 SECRET_KEY=your-django-secret-key
 DEBUG=True
 
-# Database (PostgreSQL)
+## Database (PostgreSQL)
 POSTGRES_DB=quiz_db
 POSTGRES_USER=quiz_user
 POSTGRES_PASSWORD=supersecret
 POSTGRES_HOST=127.0.0.1
 POSTGRES_PORT=5432
 
-# OpenAI
+## OpenAI
 OPENAI_API_KEY=sk-...
 
-# Google OAuth
+## Google OAuth
 GOOGLE_CLIENT_ID=...
 
-# Email (SMTP)
+## Email (SMTP)
 EMAIL_HOST=smtp.example.com
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
 EMAIL_HOST_USER=you@example.com
 EMAIL_HOST_PASSWORD=emailpassword
 
-# Frontend URL (for email links)
+## Frontend URL (for email links)
 FRONTEND_URL=http://localhost:3000
 
 
