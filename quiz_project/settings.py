@@ -131,11 +131,13 @@ OPENAI_API_KEY = config("OPENAI_API_KEY", default="")
 CORS_ALLOW_CREDENTIALS = True
 
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:3000']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:3000', "https://ai-quiz-backend.onrender.com",]
 
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "https://ai-quiz-backend.onrender.com",
+
 ]
 
 SESSION_COOKIE_AGE = 1209600  # 2 weeks
